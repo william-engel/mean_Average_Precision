@@ -22,6 +22,25 @@ def calculate_iou(gt_boxes, pred_boxes):
   iou = intersectionArea/unionArea
   return np.clip(iou,0.0,1.0)
 
+def calculate_mAP_per_class(gt, pred, iou_thresholds, mAP_per_class, interpolation = '11_point'):
+  # gt   [x1, y1, x2, y2, class] Nx5
+  # pred [x1, y1, x2, y2, class, score] Nx6
+  # mAP_per_class {'class_id': [], 'class_id': [], ...} 
+
+  gt_classes = gt[:,4].astype('int')
+  pred_classes = pred[:,4].astype('int')
+
+  present_classes = np.unique(gt_classes)
+
+  for cls in present_classes:
+    gt_ = gt[gt_classes == cls][:,:4]
+    pred_ = np.delete(pred[pred_classes == cls], np.s_[4:5], axis=1) 
+    for iou_threshold in iou_thresholds:
+      AP = calculate_AP(gt_, pred_, iou_threshold, interpolation = '11_point')
+      mAP_per_class[cls].append(AP)
+
+  return mAP_per_class
+
 def calculate_mAP(gt, pred, iou_thresholds, interpolation = '11_point'):
   # gt   [x1, y1, x2, y2, class] Nx5
   # pred [x1, y1, x2, y2, class, score] Nx6
